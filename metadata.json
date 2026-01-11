@@ -1,0 +1,7 @@
+{
+  "name": "Mizo Amin Cinematic Archive",
+  "description": "An ultra-premium, cinematic digital archive and portfolio featuring spatial computing UI/UX, high-performance masonry layouts, and immersive motion design.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
