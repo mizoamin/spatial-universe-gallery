@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MIZO AMIN | The Master Domain</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;400;600&family=Syncopate:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        /* =========================================
+           1. THE STAGE (BASE STYLES)
+           ========================================= */
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Montserrat', sans-serif; user-select: none; }
+        
+        #canvas-webgl {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            background: radial-gradient(circle at center, #050508 0%, #000000 100%);
+        }
+
+        /* =========================================
+           2. THE INTRO (MIZO IMAGES) - FROM V1/V3
+           ========================================= */
+        #intro-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 50; padding-bottom: 12vh;
+            pointer-events: auto;
+        }
+
+        .mizo-layer {
+            position: absolute; 
+            height: 60vh; max-height: 850px; width: auto;
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #layer-off { opacity: 1; z-index: 51; }
+        #layer-ready { opacity: 0; z-index: 52; transform: scale(1.02); }
+        #layer-active { opacity: 0; z-index: 53; transform: scale(1); filter: brightness(1.2) contrast(1.1); }
+
+        /* =========================================
+           3. THE UI (NAVIGATION) - FROM V2
+           ========================================= */
+        #main-ui {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 20; pointer-events: none; opacity: 0; /* Hidden initially */
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        /* Titles */
+        .big-title {
+            font-family: 'Syncopate', sans-serif;
+            font-size: 7vw; line-height: 1; color: white;
+            text-transform: uppercase; text-align: center;
+            text-shadow: 0 0 40px rgba(255,255,255,0.2);
+            mix-blend-mode: overlay;
+            margin-bottom: 10px;
+        }
+
+        .sub-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px; letter-spacing: 8px; color: rgba(255,255,255,0.8);
+            text-transform: uppercase;
+        }
+
+        /* Navigation Dots */
+        .nav-container {
+            position: absolute; bottom: 8vh; left: 0; width: 100%;
+            display: flex; justify-content: center; gap: 15px;
+            z-index: 30; pointer-events: auto;
+        }
+        .dot {
+            width: 40px; height: 2px; background: rgba(255,255,255,0.2);
+            cursor: pointer; transition: all 0.3s;
+        }
+        .dot.active { background: #00ffff; width: 60px; box-shadow: 0 0 15px #00ffff; }
+
+        /* Navigation Arrows */
+        .nav-arrow {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            font-size: 40px; color: rgba(255,255,255,0.1);
+            padding: 40px; cursor: pointer; pointer-events: auto;
+            transition: all 0.3s; z-index: 40; font-family: 'Syncopate', sans-serif;
+        }
+        .nav-arrow:hover { color: #00ffff; scale: 1.2; }
+        #arrow-left { left: 2vw; }
+        #arrow-right { right: 2vw; }
+
+        /* Footer Instruction */
+        #instruction {
+            position: absolute; bottom: 4vh; width: 100%; text-align: center;
+            color: #00ffff; font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+            animation: pulse 2s infinite; z-index: 60; pointer-events: none;
+        }
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; text-shadow: 0 0 10px #00ffff; } 100% { opacity: 0.4; } }
+
+        @media (max-width: 768px) {
+            .mizo-layer { height: 45vh; }
+            .big-title { font-size: 12vw; }
+            .nav-arrow { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <canvas id="canvas-webgl"></canvas>
+
+    <div id="intro-container">
+        <img id="layer-off" class="mizo-layer" src="https://raw.githubusercontent.com/mizoamin/mizo-assets-media-1/main/brand_assets/professional-headshots-and-profile-pics/mizo-state1-off.png">
+        <img id="layer-ready" class="mizo-layer" src="https://raw.githubusercontent.com/mizoamin/mizo-assets-media-1/main/brand_assets/professional-headshots-and-profile-pics/mizo-state2-ready.png">
+        <img id="layer-active" class="mizo-layer" src="https://raw.githubusercontent.com/mizoamin/mizo-assets-media-1/main/brand_assets/professional-headshots-and-profile-pics/mizo-state3-active.png">
+    </div>
+
+    <div id="main-ui">
+        <div class="big-title" id="ui-title">LEGACY</div>
+        <div class="sub-title" id="ui-sub">BASKETBALL JOURNEY</div>
+        
+        <div class="nav-container" id="dots-wrapper"></div>
+        <div id="arrow-left" class="nav-arrow">&lt;</div>
+        <div id="arrow-right" class="nav-arrow">&gt;</div>
+    </div>
+
+    <div id="instruction">HOLD TO INITIALIZE</div>
+
+    <script>
+        // =========================================================
+        // DATA CONFIGURATION (The Brain)
+        // =========================================================
+        const planetsData = [
+            { id: 'legacy', title: 'LEGACY', sub: 'Basketball Career', color: 0xffaa00, texture: 'https://upload.wikimedia.org/wikipedia/commons/4/4e/Basketball_texture.png' },
+            { id: 'ventures', title: 'VENTURES', sub: 'Business Innovation', color: 0x8A2BE2, texture: 'https://upload.wikimedia.org/wikipedia/commons/d/db/Moonmap_from_clementine_data.png' }, // Placeholder for marble
+            { id: 'vision', title: 'VISION', sub: 'Tech & Future', color: 0x00ffff, texture: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Earth_Poster_2000.jpg' } // Placeholder for earth/grid
+        ];
+
+        // =========================================================
+        // SYSTEM 1: INTRO CONTROLLER (Logic from V1)
+        // =========================================================
+        const Intro = {
+            layers: {
+                off: document.getElementById('layer-off'),
+                ready: document.getElementById('layer-ready'),
+                active: document.getElementById('layer-active')
+            },
+            container: document.getElementById('intro-container'),
+            inst: document.getElementById('instruction'),
+            isActive: false,
+            
+            init: function() {
+                const zone = this.container;
+                zone.addEventListener('mousedown', () => this.startHold());
+                zone.addEventListener('touchstart', (e) => { e.preventDefault(); this.startHold(); });
+                zone.addEventListener('mouseup', () => this.endHold());
+                zone.addEventListener('touchend', () => this.endHold());
+            },
+
+            startHold: function() {
+                if(this.isActive) return;
+                this.layers.ready.style.opacity = '1';
+                this.timer = setTimeout(() => this.go(), 800);
+            },
+
+            endHold: function() {
+                if(this.isActive) return;
+                clearTimeout(this.timer);
+                this.layers.ready.style.opacity = '0';
+            },
+
+            go: function() {
+                this.isActive = true;
+                // Swap images
+                this.layers.off.style.opacity = '0';
+                this.layers.ready.style.opacity = '0';
+                this.layers.active.style.opacity = '1';
+                
+                // Cinematic Zoom & Fade
+                gsap.to(this.layers.active, { scale: 1.2, duration: 1.5, ease: "power2.out" });
+                gsap.to(this.container, { opacity: 0, delay: 1.2, duration: 1, onComplete: () => {
+                    this.container.style.display = 'none';
+                }});
+                gsap.to(this.inst, { opacity: 0, duration: 0.5 });
+
+                // Trigger Engine & UI
+                Engine.triggerWarp();
+                setTimeout(() => Navigation.show(), 3500); // Show UI after warp
+            }
+        };
+
+        // =========================================================
+        // SYSTEM 2: 3D ENGINE (Graphics from V3)
+        // =========================================================
+        const Engine = {
+            scene: null, camera: null, renderer: null,
+            planetMesh: null, stars: null, meteors: [],
+            warpSpeed: 0,
+            
+            init: function() {
+                const canvas = document.getElementById('canvas-webgl');
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.FogExp2(0x000000, 0.0005);
+
+                this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 20000);
+                this.camera.position.set(0, 0, 1000);
+
+                this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+
+                this.createLights();
+                this.createStars();
+                this.createPlanet(); // The Hero Object
+                
+                this.animate();
+                setInterval(() => this.spawnMeteor(), 500);
+            },
+
+            createLights: function() {
+                const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+                sun.position.set(50, 30, 50);
+                this.scene.add(sun);
+                
+                // Cinematic Rim Light
+                this.rimLight = new THREE.SpotLight(0x4488ff, 8, 800, Math.PI/3, 0.5);
+                this.rimLight.position.set(-50, 50, -150);
+                this.rimLight.lookAt(0,0,0);
+                this.scene.add(this.rimLight);
+            },
+
+            createStars: function() {
+                const count = 8000;
+                const geo = new THREE.BufferGeometry();
+                const pos = new Float32Array(count * 3);
+                for(let i=0; i<count; i++) {
+                    pos[i*3] = (Math.random()-0.5)*4000;
+                    pos[i*3+1] = (Math.random()-0.5)*4000;
+                    pos[i*3+2] = (Math.random()-0.5)*4000;
+                }
+                geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+                
+                const sprite = new THREE.TextureLoader().load('https://threejs.org/examples/textures/sprites/disc.png');
+                const mat = new THREE.PointsMaterial({
+                    color: 0xffffff, size: 2.5, map: sprite, transparent: true, opacity: 0.8
+                });
+                this.stars = new THREE.Points(geo, mat);
+                this.scene.add(this.stars);
+            },
+
+            createPlanet: function() {
+                // Default Legacy Planet
+                const tex = new THREE.TextureLoader().load(planetsData[0].texture);
+                const geo = new THREE.SphereGeometry(14, 64, 64);
+                const mat = new THREE.MeshStandardMaterial({
+                    map: tex, bumpMap: tex, bumpScale: 0.15,
+                    color: 0xffaa00, roughness: 0.4, metalness: 0.1
+                });
+                this.planetMesh = new THREE.Mesh(geo, mat);
+                this.planetMesh.position.set(0, 0, -1000); // Hidden initially
+                this.planetMesh.visible = false;
+                this.scene.add(this.planetMesh);
+            },
+
+            spawnMeteor: function() {
+                // Shader Meteor (V3 logic)
+                const len = 300 + Math.random()*200;
+                const geo = new THREE.BufferGeometry();
+                geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([0,0,0, -len,0,0]), 3));
+                geo.setAttribute('alpha', new THREE.BufferAttribute(new Float32Array([1.0, 0.0]), 1));
+                
+                const mat = new THREE.ShaderMaterial({
+                    transparent: true, blending: THREE.AdditiveBlending,
+                    uniforms: { color: { value: new THREE.Color(0xaaccff) } },
+                    vertexShader: `attribute float alpha; varying float vAlpha; void main() { vAlpha = alpha; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+                    fragmentShader: `uniform vec3 color; varying float vAlpha; void main() { gl_FragColor = vec4(color, vAlpha); }`
+                });
+                
+                const m = new THREE.Line(geo, mat);
+                m.position.set((Math.random()-0.5)*3000, (Math.random()-0.5)*2000, -500 - Math.random()*1000);
+                m.rotation.z = Math.PI/4 + (Math.random()-0.5)*0.5;
+                this.scene.add(m);
+                this.meteors.push({ mesh: m, speed: 40 + Math.random()*30, life: 1.0 });
+            },
+
+            updatePlanetTexture: function(idx) {
+                const data = planetsData[idx];
+                const tex = new THREE.TextureLoader().load(data.texture);
+                
+                // Animate change
+                gsap.to(this.planetMesh.scale, { x: 0.01, y: 0.01, duration: 0.3, onComplete: () => {
+                    this.planetMesh.material.map = tex;
+                    this.planetMesh.material.bumpMap = tex;
+                    this.planetMesh.material.color.setHex(data.id === 'legacy' ? 0xffaa00 : 0xffffff);
+                    this.rimLight.color.setHex(data.color);
+                    
+                    gsap.to(this.planetMesh.scale, { x: 1, y: 1, duration: 0.5, ease: "back.out(1.5)" });
+                }});
+            },
+
+            triggerWarp: function() {
+                gsap.to(this, { warpSpeed: 60, duration: 2, ease: "power2.in", onComplete: () => {
+                    gsap.to(this, { warpSpeed: 2, duration: 3, ease: "power2.out" });
+                }});
+                
+                this.planetMesh.visible = true;
+                this.planetMesh.position.z = -1500;
+                gsap.to(this.planetMesh.position, { z: 0, duration: 4, delay: 0.5, ease: "elastic.out(1, 0.75)" });
+            },
+
+            animate: function() {
+                requestAnimationFrame(this.animate.bind(this));
+                
+                // Stars
+                const p = this.stars.geometry.attributes.position.array;
+                for(let i=0; i<p.length; i+=3) {
+                    p[i+2] += 2 + this.warpSpeed;
+                    if(p[i+2]>1000) { p[i+2] = -3000; p[i]=(Math.random()-0.5)*4000; p[i+1]=(Math.random()-0.5)*4000; }
+                }
+                this.stars.geometry.attributes.position.needsUpdate = true;
+                this.stars.rotation.z += 0.0005;
+
+                // Planet
+                if(this.planetMesh.visible) {
+                    this.planetMesh.rotation.x -= 0.02; // Backspin
+                    this.planetMesh.rotation.y += 0.005;
+                }
+
+                // Meteors
+                for(let i=this.meteors.length-1; i>=0; i--) {
+                    const m = this.meteors[i];
+                    m.mesh.translateX(-m.speed);
+                    m.life -= 0.015;
+                    m.mesh.material.uniforms.color.value.setHSL(0.6, 1, m.life);
+                    if(m.life<=0) { this.scene.remove(m.mesh); this.meteors.splice(i,1); }
+                }
+
+                // Parallax
+                const time = Date.now() * 0.0005;
+                this.camera.position.x += (Math.sin(time)*5 - this.camera.position.x) * 0.05;
+                this.camera.position.y += (Math.cos(time)*5 - this.camera.position.y) * 0.05;
+                this.camera.lookAt(0,0,0);
+
+                this.renderer.render(this.scene, this.camera);
+            }
+        };
+
+        // =========================================================
+        // SYSTEM 3: NAVIGATION CONTROLLER (Logic from V2)
+        // =========================================================
+        const Navigation = {
+            currentIdx: 0,
+            ui: document.getElementById('main-ui'),
+            title: document.getElementById('ui-title'),
+            sub: document.getElementById('ui-sub'),
+            dots: document.getElementById('dots-wrapper'),
+            
+            init: function() {
+                // Create Dots
+                planetsData.forEach((p, i) => {
+                    const d = document.createElement('div');
+                    d.className = `dot ${i===0?'active':''}`;
+                    d.onclick = () => this.switch(i);
+                    this.dots.appendChild(d);
+                });
+
+                // Arrows
+                document.getElementById('arrow-right').onclick = () => this.next();
+                document.getElementById('arrow-left').onclick = () => this.prev();
+            },
+
+            show: function() {
+                this.ui.style.opacity = '1';
+                gsap.fromTo([this.title, this.sub], { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 1, stagger: 0.1 });
+                
+                // Show instruction again but changed
+                Intro.inst.innerText = "SWIPE TO EXPLORE";
+                Intro.inst.style.opacity = '1';
+            },
+
+            switch: function(index) {
+                if(index === this.currentIdx) return;
+                this.currentIdx = index;
+                const data = planetsData[index];
+
+                // Update UI
+                document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === index));
+                
+                gsap.to([this.title, this.sub], { y: -20, opacity: 0, duration: 0.3, onComplete: () => {
+                    this.title.innerText = data.title;
+                    this.sub.innerText = data.sub;
+                    gsap.to([this.title, this.sub], { y: 0, opacity: 1, duration: 0.5 });
+                }});
+
+                // Update Engine
+                Engine.updatePlanetTexture(index);
+            },
+
+            next: function() { this.switch((this.currentIdx + 1) % planetsData.length); },
+            prev: function() { this.switch((this.currentIdx - 1 + planetsData.length) % planetsData.length); }
+        };
+
+        // =========================================================
+        // INITIALIZATION
+        // =========================================================
+        window.onload = () => {
+            Engine.init();
+            Intro.init();
+            Navigation.init();
+        };
+
+        window.addEventListener('resize', () => {
+            Engine.camera.aspect = window.innerWidth / window.innerHeight;
+            Engine.camera.updateProjectionMatrix();
+            Engine.renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
+</body>
+</html>
